@@ -1,0 +1,36 @@
+BANZAI FPL v4.1 — MANUAL UPDATE VERSION
+========================================
+
+THIS VERSION DOES NOT AUTO-FETCH FPL DATA ON GITHUB.
+
+GitHub Actions only deploys the website after YOU update/push it.
+
+FIRST TIME (because the old repository was deleted)
+---------------------------------------------------
+1. Create a new EMPTY PUBLIC GitHub repository:
+   banzai-fpl-dashboard
+
+2. Unzip this package to a permanent folder on your Mac.
+
+3. Double-click:
+   setup_github.command
+
+4. GitHub > repository > Settings > Pages
+   Set Source = GitHub Actions
+
+5. Wait for the deployment workflow to turn green.
+
+Permanent URL:
+https://filmsurr.github.io/banzai-fpl-dashboard/
+
+EVERY FUTURE GAMEWEEK
+---------------------
+Run:
+   ./update_and_publish.command
+
+or double-click update_and_publish.command.
+
+It will fetch FPL data, recalculate the dashboard, commit, and push.
+GitHub Pages will then redeploy automatically.
+
+NO 6-HOUR SCHEDULED AUTO UPDATE IS INCLUDED.

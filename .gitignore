@@ -1,0 +1,6 @@
+.DS_Store
+__pycache__/
+*.pyc
+.fpl_cache/
+backup_before_*/
+backup_before_v4_*/

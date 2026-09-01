@@ -1,0 +1,39 @@
+{
+  "league_id": 218355,
+  "brand_name": "BANZAI FPL SEASON 2",
+  "season": "2026-2027",
+  "github_repository": "filmsurr/banzai-fpl-dashboard",
+  "pages_url": "https://filmsurr.github.io/banzai-fpl-dashboard/",
+  "total_prize_target_thb": 5000,
+  "max_prizes_per_manager": 2,
+  "pass_down_candidates": 2,
+  "weekly_mvp_tie_policy": "shared_win",
+  "prizes": [
+    {"key":"season_1","label":"League 1st","short_label":"Champion","icon":"🏆","percent":30,"amount_thb":1500,"metric":"season_rank","target_rank":1,"priority":1,"definition":"Current/final official league rank #1."},
+    {"key":"season_2","label":"League 2nd","short_label":"Runner-up","icon":"🥈","percent":20,"amount_thb":1000,"metric":"season_rank","target_rank":2,"priority":2,"definition":"Current/final official league rank #2."},
+    {"key":"season_3","label":"League 3rd","short_label":"Third place","icon":"🥉","percent":10,"amount_thb":500,"metric":"season_rank","target_rank":3,"priority":3,"definition":"Current/final official league rank #3."},
+    {"key":"gw_mvp","label":"Highest GW MVP","short_label":"GW MVP","icon":"⭐","percent":10,"amount_thb":500,"metric":"gw_mvp_wins","priority":4,"definition":"Most weekly MVP wins. Weekly MVP = highest FPL GW points in the league for that GW; tied top scores receive a shared MVP win."},
+    {"key":"team_value","label":"Highest Team Value","short_label":"Team Value","icon":"💰","percent":10,"amount_thb":500,"metric":"team_value","priority":5,"definition":"Highest FPL team value at the latest finalized Gameweek."},
+    {"key":"captain","label":"Total Captain Points","short_label":"Captain King","icon":"©","percent":10,"amount_thb":500,"metric":"captain_points","priority":6,"definition":"Cumulative final captain contribution, including x2, Triple Captain x3 and vice-captain promotion."},
+    {"key":"highest_gw","label":"Highest Gameweek Point","short_label":"Highest GW Score","icon":"🎯","percent":10,"amount_thb":500,"metric":"best_gw_points","priority":7,"definition":"Highest single FPL GW points value achieved during the season."}
+  ],
+  "penalty_rules_by_gw_count": {
+    "2": {"penalty_teams":2,"penalty_pool_thb":265},
+    "3": {"penalty_teams":3,"penalty_pool_thb":395},
+    "4": {"penalty_teams":3,"penalty_pool_thb":530},
+    "5": {"penalty_teams":4,"penalty_pool_thb":660},
+    "6": {"penalty_teams":5,"penalty_pool_thb":790}
+  },
+  "penalty_schedule": [
+    {"month":"Aug","year":2026,"gw_count":2},
+    {"month":"Sep","year":2026,"gw_count":3},
+    {"month":"Oct","year":2026,"gw_count":4},
+    {"month":"Nov","year":2026,"gw_count":3},
+    {"month":"Dec","year":2026,"gw_count":6},
+    {"month":"Jan","year":2027,"gw_count":5},
+    {"month":"Feb","year":2027,"gw_count":4},
+    {"month":"Mar","year":2027,"gw_count":3},
+    {"month":"Apr","year":2027,"gw_count":3},
+    {"month":"May","year":2027,"gw_count":5}
+  ]
+}
