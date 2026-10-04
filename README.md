@@ -1,68 +1,66 @@
-# BANZAI FPL Season 2 — Manual Update v4.1
+# banzai-fpl-dashboard — FPL season dashboard
 
-League ID: **218355**  
-Live site after GitHub setup: **https://filmsurr.github.io/banzai-fpl-dashboard/**
+League ID: **218355** (preserved from this repository). Earlier project notes reverse these IDs; verify the league name before changing this setting.
 
-This is the clean BANZAI rebuild with **manual FPL data updates from your Mac**.
+## Files
 
-## Update model
+- `rules_config.json`: this league's independent prize rules, monthly schedule and penalties.
+- `dashboard_data.js`: last successful FPL snapshot; future updates retain `history` and `captain_history`.
+- `engine.js`: browser calculation engine; penalty tie sharing, prize eligibility and validation.
+- `app.js`, `styles.css`, `index.html`: rendering, controls and responsive layout.
+- `payments.json`: explicitly recorded penalty payments and finalized prize awards.
+- `fpl_dashboard_updater.py`: manual Python standard-library updater.
+- `tests/engine.test.js`: calculation regression checks.
 
-There is **no scheduled GitHub FPL updater** in this version.
+## Weekly update on your Mac
 
-Your normal workflow is:
-
-`Terminal / update_and_publish.command → FPL API → dashboard_data.js → GitHub push → GitHub Pages deploy`
-
-GitHub Actions is used only to **publish the website after you push**, not to fetch FPL data automatically.
-
-## Included rules/features
-
-- League ID 218355.
-- Prize target 5,000 THB.
-- 7 prize categories.
-- Maximum 2 prizes per manager with pass-down logic.
-- Highest GW MVP tracking.
-- Highest single GW score, captain points, and team value.
-- Correct Aug 2026–May 2027 monthly GW schedule.
-- Monthly penalty teams/pool determined by number of GWs in that month.
-- Monthly penalty uses **official net GW score after transfer-hit deductions**.
-- Dashboard shows Raw Points / Transfer Hits / Net Penalty Score.
-- Finalized penalty totals and projected current-month penalty.
-- Glassmorphism dashboard and PNG export.
-- GitHub Pages deployment on each push to `main`.
-
-## First setup after deleting/recreating your repository
-
-1. Create an **empty public** GitHub repository named `banzai-fpl-dashboard` under `filmsurr`.
-2. Unzip this package to a permanent folder on your Mac.
-3. Run `setup_github.command` once.
-4. On GitHub: **Settings → Pages → Source = GitHub Actions**.
-5. Wait for `Deploy BANZAI FPL dashboard to GitHub Pages` to turn green.
-
-## Every future Gameweek
-
-From Terminal:
+Open Terminal in your repository folder:
 
 ```bash
-cd "/path/to/BANZAI_FPL_v4.1_MANUAL"
-./update_and_publish.command
+git switch main
+git pull --ff-only origin main
+python3 fpl_dashboard_updater.py
+node tests/engine.test.js # optional if Node.js is installed
+git status
+git add dashboard_data.js
+git commit -m "Update FPL Gameweek data"
+git push origin main
 ```
 
-Or simply double-click `update_and_publish.command` in Finder.
+Or double-click `update_and_publish.command`. It refuses uncommitted edits and publishes only the data file. No scheduled FPL fetching has been added. Existing Pages deployment runs after a main-branch push.
 
-The script:
-1. syncs with GitHub,
-2. downloads the latest finalized FPL data,
-3. recalculates the dashboard,
-4. commits changed `dashboard_data.js`,
-5. pushes to `main`.
+Preview locally using `python3 -m http.server 8000` and open http://localhost:8000. Opening index.html directly cannot fetch JSON files.
 
-GitHub Pages then republishes the same URL automatically.
+## Payments
 
-## Important penalty score definition
+No historic payment receipt records were supplied. Previous fields called collected/paid were actually assessments. The new dashboard uses only payments.json as evidence of payment. To record a verified payment, add an object to `penalties`:
 
-For each GW, monthly penalty uses the official net contribution to league total:
+```json
+{"manager_id": 123456, "month": "Aug", "year": 2026, "amount_thb": 50, "date": "2026-10-04"}
+```
 
-`Net GW score = current total_points − previous total_points`
+For a confirmed prize award, use `prizes` with manager_id, amount_thb, key, date and `"status": "finalized"`. Never record a projected award as finalized. Review and commit ledger edits separately.
 
-The transfer cost is displayed separately for transparency. This avoids subtracting a `-4` transfer hit twice.
+## Rule changes
+
+Review this league's rules_config.json only. Current instruction changes penalty cutoff ties to shared occupied-slot amounts and prize pass-down to continue through all eligible managers. The underlying gap-weighted penalty formula and each league's prize amounts remain intact. Unconfigured prize ties stay pending; SMT equal-value conflicts remain manual review.
+
+Penalty precision is retained for equal division. Display rounds to two decimals; an indivisible satang needs an explicit settlement policy. The configured season pool variance is displayed rather than silently adjusted.
+
+## GitHub Pages
+
+The existing `.github/workflows/pages.yml` publishes static files after a push to main. Keep Settings → Pages → Source set to GitHub Actions. All assets use relative paths and work under the repository subdirectory. No build step or backend is required.
+
+## Troubleshooting
+
+- API timeout: the existing snapshot stays intact. Retry later.
+- Missing GW: updater rejects incomplete manager history and preserves previous data.
+- Missing captain data: the dashboard flags the captain prize for review.
+- Old saved snapshot: a data warning identifies age and missing historical detail. Future updater runs preserve full history.
+- Zero recorded funding: no payment records are loaded; assessed amounts are separate.
+- `DATA WARNING`: open the warning panel and inspect the affected rules/data before settling money.
+- No automatic fetching: run the manual updater each GW.
+
+## Verification
+
+Run `node tests/engine.test.js` and `python3 -m unittest discover -s tests -p '*_test.py'`. Calculation checks cover ranking, transfer hits, penalty boundary ties, multiple ties, money conservation, prize caps/pass-down, missing GWs, month transitions, and financial totals.

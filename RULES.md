@@ -67,3 +67,9 @@ Penalty split:
 Integer THB uses largest-remainder rounding so the monthly payments sum exactly to the configured pool.
 
 The configured penalty schedule totals **5,015 THB**, 15 THB above the 5,000 THB prize target. v4 keeps that difference visible as an audit item and does not silently change a rule.
+
+## Current calculation policy (supersedes earlier cutoff/pass-down wording)
+
+Penalty ties share the sum of occupied slot amounts equally across all tied managers, including ties across the cutoff. The configured gap-weighted pool formula is preserved. The engine uses full precision and formats THB to 2 decimals. Prize pass-down continues until an eligible winner is found, with configured prize tiebreaks and equal-value conflict policy.
+
+Finalized penalties are assessments, not payment receipts. Only payments.json entries establish paid money or finalized prize awards. Legacy snapshot totals remain preserved for audit but are not treated as receipts.

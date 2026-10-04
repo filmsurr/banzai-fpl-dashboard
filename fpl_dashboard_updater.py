@@ -91,11 +91,11 @@ def get_bootstrap():
     events = data.get("events", [])
     finalized = [
         e["id"] for e in events
-        if e.get("finished") and (e.get("data_checked") is True or "data_checked" not in e)
+        if e.get("finished") and e.get("data_checked") is True
     ]
     # Fallback for API seasons where data_checked is absent/lagging.
     if not finalized:
-        finalized = [e["id"] for e in events if e.get("finished")]
+        finalized = []
     latest = max(finalized) if finalized else 0
     processing = []
     for e in events:
@@ -283,7 +283,7 @@ def reward_object(defn, ranking, unit="pts", decimals=0):
 
 def allocate_prizes(rewards):
     cap = int(CONFIG["max_prizes_per_manager"])
-    max_candidates = int(CONFIG["pass_down_candidates"])
+    max_candidates = int(CONFIG["pass_down_candidates"] or max((len(r["ranking"]) for r in rewards), default=0))
     counts = {}
     names = {}
     for reward in sorted(rewards, key=lambda r: (-r["amount_thb"], r["priority"])):
@@ -311,6 +311,25 @@ def allocate_prizes(rewards):
             reason = f"Prize passed to #2 because {', '.join(skipped)} reached the {cap}-prize cap."
         reward["allocation"] = {"status": status, "winner": selected, "source_rank": source_rank, "reason": reason}
     return counts, names
+
+
+def tied_slot_payments(ranking, slots, pool, score_key):
+    """Share money for occupied lowest-score slots across the entire tied group."""
+    ordered=sorted(ranking, key=lambda row: row[score_key])
+    top=max((row[score_key] for row in ordered), default=0)
+    weights=[max(0,top-row[score_key]) for row in ordered[:slots]]
+    total=sum(weights)
+    amounts=[pool*w/total if total else pool/max(1,len(weights)) for w in weights]
+    selected=[]; shares=[]; pos=0
+    while pos<len(ordered):
+        end=pos+1
+        while end<len(ordered) and ordered[end][score_key]==ordered[pos][score_key]: end+=1
+        if pos<slots:
+            amount=sum(amounts[pos:min(end,slots)])/(end-pos)
+            selected.extend(ordered[pos:end]); shares.extend([amount]*(end-pos))
+        pos=end
+    if selected and abs(sum(shares)-pool)>1e-7: raise ValueError('Penalty money conservation failed')
+    return selected,shares
 
 
 def exact_split(pool, rows):
@@ -349,10 +368,9 @@ def penalty_period(history, managers, latest_gw, period):
         return None
     top = ranking[0]["value"]
     n = min(int(period["penalty_teams"]), len(ranking))
-    bottom = sorted(ranking, key=lambda r: (r["value"], r["manager"]))[:n]
+    bottom, payments = tied_slot_payments(ranking, n, period["penalty_pool_thb"], "value")
     for r in bottom:
         r["gap"] = max(0, top - r["value"])
-    payments = exact_split(int(period["penalty_pool_thb"]), bottom)
     for r, pay in zip(bottom, payments):
         r["penalty_pay_thb"] = pay
         r["projected_pay_thb"] = pay
@@ -517,8 +535,34 @@ def write_data(data):
     if canonical_without_timestamp(existing)==canonical_without_timestamp(data):
         print("NO CHANGE: dashboard data is already current.")
         return False
-    DATA_FILE.write_text("window.FPL_DASHBOARD_DATA = "+json.dumps(data,ensure_ascii=False,separators=(",",":"))+";\n",encoding="utf-8")
+    temp=DATA_FILE.with_suffix('.tmp')
+    temp.write_text("window.FPL_DASHBOARD_DATA = "+json.dumps(data,ensure_ascii=False,separators=(",",":"))+";\n",encoding="utf-8")
+    temp.replace(DATA_FILE)
     return True
+
+
+def preserve_history_guard(history, latest):
+    path=ROOT/'dashboard_data.js'
+    if not path.exists(): return
+    match=re.search(r'=\s*(\{.*\})\s*;?\s*$',path.read_text(encoding='utf-8'),re.S)
+    if not match: raise ValueError('Existing snapshot is unreadable; refusing replacement')
+    old=json.loads(match.group(1))
+    if latest<old.get('latest_gw',0): raise ValueError('API Gameweek regressed; existing snapshot preserved')
+    keys={(h['manager_id'],h['gw']) for h in history}
+    if any((h['manager_id'],h['gw']) not in keys for h in old.get('history',[])):
+        raise ValueError('Historical row disappeared; existing snapshot preserved')
+
+
+def validate_history(managers, history, latest):
+    preserve_history_guard(history,latest)
+    ids=[m['manager_id'] for m in managers]
+    if not ids or len(set(ids)) != len(ids): raise ValueError('Empty or duplicate managers')
+    for mid in ids:
+        rows=[h for h in history if h['manager_id']==mid]
+        if sorted(h['gw'] for h in rows)!=list(range(1,latest+1)):
+            raise ValueError(f'Missing or duplicate Gameweeks for entry {mid}; previous snapshot preserved')
+        if any(h['transfer_cost']<0 or h['transfer_cost']%4 for h in rows):
+            raise ValueError('Invalid transfer cost')
 
 
 def main():
@@ -535,8 +579,12 @@ def main():
         if processing:
             print("FPL processing status:", ", ".join(f"GW{x['gw']}" for x in processing))
         history = get_histories(managers, latest_gw)
+        validate_history(managers, history, latest_gw)
         captain_rows = get_captain_data(managers, latest_gw, player_names)
         data = build_dashboard(meta, managers, history, captain_rows, latest_gw, processing)
+        data['legacy_financial_semantics'] = 'assessed_not_payment_receipts'
+        data['history'] = history
+        data['captain_history'] = captain_rows
         changed = write_data(data)
         print("SUCCESS:", "dashboard_data.js updated" if changed else "no dashboard change required")
         return 0
