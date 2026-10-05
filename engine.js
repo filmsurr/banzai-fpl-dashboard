@@ -64,8 +64,15 @@ function build(d,raw,payments={penalties:[],prizes:[]}){
  else if(started)warnings.push(`${p.month}: complete monthly ranking unavailable; penalty calculation withheld`);
  if(rows.length&&Math.abs(sum(rows.map(r=>r.amount))-p.penalty_pool_thb)>.00001)warnings.push(`${p.month}: penalty money conservation failed`);
  return {...p,status,rows,verified,through};});
+ const settlementKeys=new Set();
+ for(const settlement of payments.settlements||[]){
+  const key=`${settlement.month}/${settlement.year}`,p=periods.find(p=>p.month===settlement.month&&p.year===settlement.year),charges=settlement.charges||[],penalized=p?.rows.filter(r=>r.amount>0)||[];
+  if(settlementKeys.has(key)||!p||p.status!=='Finalized'||!settlement.note||charges.length!==penalized.length||new Set(charges.map(x=>x.manager_id)).size!==charges.length||charges.some(x=>!penalized.some(r=>r.id===x.manager_id)||!Number.isFinite(x.amount_thb)||x.amount_thb<0)||Math.abs(sum(charges.map(x=>x.amount_thb))-p.penalty_pool_thb)>.00001)throw Error('Invalid historical settlement: complete finalized charges must preserve the monthly pool');
+  for(const row of penalized){const same=penalized.filter(r=>r.points===row.points),values=same.map(r=>charges.find(x=>x.manager_id===r.id).amount_thb);if(Math.max(...values)-Math.min(...values)>.00001)throw Error('Historical settlement must preserve equal penalty shares for tied managers');row.settledAmount=charges.find(x=>x.manager_id===row.id).amount_thb;}
+  p.settlementNote=settlement.note;settlementKeys.add(key);
+ }
  const prizes=allocate(c.prizes,managers,c.cap,c.manualEqual);if(history.length&&caps.length!==history.length){for(const p of prizes)if(p.metric==='captain_points'){p.winner=null;p.status='Data warning';p.reason='Captain history incomplete';}}
- const money=managers.map(m=>{const assessed=sum(periods.filter(p=>p.status==='Finalized').flatMap(p=>p.rows.filter(r=>r.id===m.id).map(r=>r.amount)));const paid=sum((payments.penalties||[]).filter(p=>p.manager_id===m.id).map(p=>p.amount_thb));const won=sum((payments.prizes||[]).filter(p=>p.manager_id===m.id&&p.status==='finalized').map(p=>p.amount_thb));return {...m,assessed,paid,outstanding:assessed-paid,won,projected:sum(prizes.filter(p=>p.winner?.id===m.id).map(p=>p.amount_thb)),net:won-paid};});
+ const money=managers.map(m=>{const assessed=sum(periods.filter(p=>p.status==='Finalized').flatMap(p=>p.rows.filter(r=>r.id===m.id).map(r=>r.settledAmount??r.amount)));const paid=sum((payments.penalties||[]).filter(p=>p.manager_id===m.id).map(p=>p.amount_thb));const won=sum((payments.prizes||[]).filter(p=>p.manager_id===m.id&&p.status==='finalized').map(p=>p.amount_thb));return {...m,assessed,paid,outstanding:assessed-paid,won,projected:sum(prizes.filter(p=>p.winner?.id===m.id).map(p=>p.amount_thb)),net:won-paid};});
  if(money.some(m=>m.outstanding<-.01))warnings.push('Recorded payment exceeds verified assessed penalties');
  return {c,managers,periods,prizes,money,history,caps,warnings:[...new Set(warnings)],latest,updated:d.updated_at};
 }
