@@ -1,0 +1,40 @@
+{
+  "penalties": [
+    {
+      "manager_id": 6840207,
+      "amount_thb": 144,
+      "month": "Aug",
+      "year": 2026,
+      "date": null,
+      "recorded_on": "2026-10-05",
+      "note": "Film confirmed August fully paid; amount from original August ledger, payment date not supplied."
+    },
+    {
+      "manager_id": 3469191,
+      "amount_thb": 121,
+      "month": "Aug",
+      "year": 2026,
+      "date": null,
+      "recorded_on": "2026-10-05",
+      "note": "Film confirmed August fully paid; amount from original August ledger, payment date not supplied."
+    }
+  ],
+  "prizes": [],
+  "settlements": [
+    {
+      "month": "Aug",
+      "year": 2026,
+      "charges": [
+        {
+          "manager_id": 6840207,
+          "amount_thb": 144
+        },
+        {
+          "manager_id": 3469191,
+          "amount_thb": 121
+        }
+      ],
+      "note": "August was paid in full against the original whole-baht charges: Pearapat 144 THB, Apinut 121 THB. Film confirmed full payment on 2026-10-05. These historical billed amounts preserve the 265 THB pool; future penalties retain the configured calculation."
+    }
+  ]
+}
