@@ -41,6 +41,10 @@ No historic payment receipt records were supplied. Previous fields called collec
 
 For a confirmed prize award, use `prizes` with manager_id, amount_thb, key, date and `"status": "finalized"`. Never record a projected award as finalized. Review and commit ledger edits separately.
 
+## Historical August settlement
+
+Film confirmed August 2026 paid in full against the original whole-baht bills: Pearapat 144 THB and Apinut 121 THB, total 265 THB. `payments.json` retains the actual receipts and a one-month `settlements` record. The penalty breakdown shows both calculated decimal penalties and historical billed amounts. Financial outstanding uses those confirmed historical bills. Future months continue to use the configured calculation; this is not a new rounding rule. Settlements require a complete finalized month, unique manager charges, the conserved monthly pool, equal amounts for tied managers, and an explanatory note. Payment dates remain unknown.
+
 ## Rule changes
 
 Review this league's rules_config.json only. Current instruction changes penalty cutoff ties to shared occupied-slot amounts and prize pass-down to continue through all eligible managers. The underlying gap-weighted penalty formula and each league's prize amounts remain intact. Unconfigured prize ties stay pending; SMT equal-value conflicts remain manual review.
